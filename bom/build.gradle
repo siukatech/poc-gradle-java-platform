@@ -1,0 +1,82 @@
+import java.util.regex.Matcher
+
+plugins {
+    id 'java-platform'
+    id 'maven-publish'
+    id 'org.springframework.boot' version '3.0.1'
+    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+//    api platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    constraints {
+        api 'commons-httpclient:commons-httpclient:3.1'
+
+        // 42.5.4 will be used instead of 42.5.0 because spring requires this version
+        // 42.5.0 will be used if there is no dependency of spring-boot 3.0.3
+        runtime 'org.postgresql:postgresql:42.0.0'
+
+//        api "org.springframework.boot:spring-boot-starter-security:3.0.3"
+    }
+}
+
+javaPlatform {
+    allowDependencies()
+}
+
+publishing {
+    publications {
+        privateMaven(MavenPublication) {
+            def artifactIdStr = "common-bom"
+            groupId "$project.group"
+            version "$project.version"
+            artifactId "$artifactIdStr"
+            from components.javaPlatform
+            pom {
+                name = "$artifactId"
+                description = "$artifactId"
+            }
+
+        }
+    }
+    repositories {
+        maven {
+            name = 'platformSnapshot'
+            allowInsecureProtocol = true
+            credentials(PasswordCredentials)
+            url = uri("$platformSnapshotUri")
+        }
+    }
+}
+
+//https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/257
+tasks.withType(GenerateMavenPom).all {
+    doLast {
+        File file = new File("$buildDir/publications/privateMaven/pom-default.xml")
+        def text = file.text
+        def pattern = "(?s)(<dependencyManagement>.+?<dependencies>)(.+?)(</dependencies>.+?</dependencyManagement>)"
+        Matcher matcher = text =~ pattern
+        def matcherResultCount = matcher.results().count()
+        matcher = text =~ pattern
+        def matcherFind = matcher.find() // this will be false if matcher.count is called
+//        println 'text:' + text
+//        println 'pattern:' + pattern
+//        println 'matcherResultCount:' + matcherResultCount
+//        println 'matcherFind:' + matcherFind
+        if (matcherFind && matcherResultCount > 1L) {
+            text = text.replaceFirst(pattern, "")
+            def firstDeps = matcher.group(2)
+//            println 'firstDeps:' + firstDeps
+            text = text.replaceFirst(pattern, '$1$2' + firstDeps + '$3')
+        }
+        file.write(text)
+    }
+}

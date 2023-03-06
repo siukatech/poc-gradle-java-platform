@@ -1,1 +1,1 @@
-# cgpt-platform
+# poc-gradle-java-platform

@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+//    id 'org.springframework.boot' version '3.0.1'
+//    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+//    maven {
+//        name = 'platformSnapshot'
+//        allowInsecureProtocol = true
+//        credentials(PasswordCredentials)
+//        url = uri("$platformSnapshotUri")
+//    }
+}
+
+dependencies {
+    // get recommended versions from the platform project
+//    implementation platform(project(':bom'))
+    implementation platform('org.example:common-bom:1.0-SNAPSHOT')
+
+    // no version required
+    implementation 'commons-httpclient:commons-httpclient'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // there is an error about
+    //:model:test: Could not find org.springframework.boot:spring-boot-starter-security:.
+    //Required by:
+    //    project :model
+    //
+    // there are two ways to resolve this error
+    // 1. specify the version number after the required dependency artifact id in this model module
+    //  - pros
+    //      - more feasibility of requesting lib
+    //  - cons
+    //      - very restrictive of dependency import
+    //      - only mentioned library can implement
+    // 2. specify the version number in the bom dependencies -> constraints block in the bom module
+    //  - pros
+    //      - library restricted, only mentioned library can be imported
+    //  - cons
+    //      - too relax of library importation
+
+    // method #2
+//    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security:3.0.3'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
